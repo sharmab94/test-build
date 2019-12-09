@@ -1,7 +1,7 @@
 steps:
   #Clone Github Repo
-  - name: 'https://github.com/sharmab94/test-build.git'
-    args: ['clone', 'https://github.com/${_REPO_NAME}/test-build.git']
+  - name: 'gcr.io/cloud-builders/git'
+    args: ['clone', 'https://github.com/${_REPO_NAME}/${_APP_NAME}.git']
 
   # Build App Image
   - name: 'gcr.io/cloud-builders/docker'
