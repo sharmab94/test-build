@@ -1,0 +1,47 @@
+steps:
+  #Clone Github Repo
+  - name: 'https://github.com/sharmab94/test-build.git'
+    args: ['clone', 'https://github.com/${_REPO_NAME}/test-build.git']
+
+  # Build App Image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [ 'build', '--build-arg', 'BUILD_VERSION=${_VERSION}', '-t', 'us.gcr.io/${_PROJECT_ID}/${_CONTAINERNAME}:${_VERSION}', '.']
+    id: "BUILD_TEST_APP"
+    waitFor: ['-']
+
+  # Push App Image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [ 'push', '--build-arg', 'BUILD_VERSION=${_VERSION}', '-t', 'us.gcr.io/${_PROJECT_ID}/${_CONTAINERNAME}:${_VERSION}']
+    id: "PUSH_TEST_APP"
+    waitFor: ['BUILD_TEST_APP']
+
+  # Update Container Image
+  - name: 'gcr.io/cloud-builders/kubectl'
+    args:
+    - 'set'
+    - 'image'
+    - 'deployment/${_DEPLOYMENTNAME}'
+    - '${_DEPLOYMENTNAME}=us.gcr.io/${_PROJECT}/${_CONTAINERNAME}:${_VERSION}'
+    env:
+    - 'COMPUTE_ZONE=${_ZONE}'
+    - 'CONTAINER_CLUSTER=${_CLUSTER}'
+
+    id: "PUSH_TEST_APP"
+    waitFor: ['BUILD_TEST_APP']
+
+substitutions:
+  _VERSION: 1.0.0
+  _CONTAINERNAME: hello-world-service
+  _DEPLOYMENTNAME: hello-world-service
+  _PROJECT_ID: odsp-management
+  _ZONE: us-central1
+  _CLUSTER: business-services-platform
+  _PROJECT: business-services-platform-dev
+  _REPO_NAME: sharmab94
+  _APP_NAME: test-build
+
+images:
+  - 'us.gcr.io/odsp-management/${_CONTAINERNAME}:${_VERSION}'
+
+options:
+  workerPool: 'odsp-management/cloud-build-workers'
